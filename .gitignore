@@ -16,3 +16,6 @@ docs/
 
 .certora_internal
 oldProofOfCodes.t.sol
+
+# lib files
+/lib
