@@ -68,15 +68,36 @@ library MathMasters {
     }
 
     /// @dev Equivalent to `(x * y) / WAD` rounded up.
+    // 3 / 5 -> 0.6 ->1
     function mulWadUp(uint256 x, uint256 y) internal pure returns (uint256 z) {
         /// @solidity memory-safe-assembly
         assembly {
             // Equivalent to `require(y == 0 || x <= type(uint256).max / y)`.
             if mul(y, gt(x, div(not(0), y))) {
-                mstore(0x40, 0xbac65e5b) // `MathMasters__MulWadFailed()`.
-                revert(0x1c, 0x04)
+                mstore(0x60, 0xa56044f7) // `MathMasters__MulWadFailed()`.
+                revert(0x7c, 0x04)
             }
-            if iszero(sub(div(add(z, x), y), 1)) { x := add(x, 1) }
+            // @audit - This line can be broken down as follows:
+            // z=0 + x = x -> (x/y) -1 == 0  -> true -> x = x + 1
+            // So, if the result is less than 1, we round up to 1
+            // Why ? Could it be wrong?
+            // @audit - This line is wrong -> Check testMulWadUpUnit() test
+
+            // // if iszero(sub(div(add(z, x), y), 1)) { x := add(x, 1) }
+
+
+            // Explanation of the rounding up logic:
+            // Round up formula: z = (x * y) / WAD + (has_remainder ? 1 : 0)
+            // Integer division always rounds DOWN by default (discards decimals).
+            // If there's a remainder, it means decimals were lost → add 1 to compensate (round up).
+            // If there's no remainder, division was exact → don't add anything.
+            // Examples:
+            // - 5 / 2 = 2.5 → 5 // 2 = 2 (lost 0.5) → 2 + 1 = 3 ✓
+            // - 999 / 1000 = 0.999 → 999 // 1000 = 0 (lost 0.999) → 0 + 1 = 1 ✓
+            // - 4 / 2 = 2.0 → 4 // 2 = 2 (exact, no remainder) → 2 + 0 = 2 ✓
+            // This evaluates to:
+            // - add(1, div(mul(x, y), WAD)) if there IS a remainder
+            // - add(0, div(mul(x, y), WAD)) if there is NO remainder
             z := add(iszero(iszero(mod(mul(x, y), WAD))), div(mul(x, y), WAD))
         }
     }

@@ -40,6 +40,22 @@ contract MathMastersTest is Base_Test {
         assertEq(MathMasters.mulWadUp(369, 271), 1);
     }
 
+    // /////////////////////////////////////////
+    // // // @audit - Added test for revert
+    // function testMulWadUpUnit() public{
+    //     uint256 x = 3000000000000000001;
+    //     uint256 y = 2500000000000000001;
+    //     uint256 result = MathMasters.mulWadUp(x, y);
+    //     uint256 resultDown = MathMasters.mulWad(x, y);
+    //     // 7500000000000000009 // With the extra line to round up
+    //     // 7500000000000000006 // Without the extra line to round up
+    //     // 7500000000000000005 // Actual result before rounding
+    //     console2.log("result:", result);
+    //     console2.log("resultDown:", resultDown);
+    // }
+    // // @audit - End of added test
+    // /////////////////////////////////////////
+
     function testMulWadUpFuzz(uint256 x, uint256 y) public {
         // We want to skip the case where x * y would overflow.
         // Since Solidity 0.8.0 checks for overflows by default,
