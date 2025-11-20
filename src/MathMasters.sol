@@ -37,9 +37,31 @@ library MathMasters {
         // @solidity memory-safe-assembly
         assembly {
             // Equivalent to `require(y == 0 || x <= type(uint256).max / y)`.
+
+            // OVERFLOW PROTECTION
+            // x * y ≤ type(uint256).max (if is > it will overflow)
+            // dividing both sides by y (assuming y != 0)
+            // x <= type(uint256).max / y
+            // if x > (type(uint256).max / y) -> overflow
+            // 
+            // Truth table for mul(y, gt(x, div(not(0), y))):
+            // ┌─────────┬─────────┬────────────────────┬──────────────┬─────────────────────┬──────────┐
+            // │ y       │ x       │ Condition          │ gt(...) ret  │ mul(y, gt(...)) ret │ Reverts? │
+            // ├─────────┼─────────┼────────────────────┼──────────────┼─────────────────────┼──────────┤
+            // │ 0       │ Any     │ x * 0 = 0 (safe)   │ 1 (if x > 0) │ 0                   │ NO ✓     │
+            // │ > 0     │ ≤ max/y │ x * y safe         │ 0            │ 0                   │ NO ✓     │
+            // │ > 0     │ > max/y │ x * y overflow     │ 1            │ y (≠ 0)             │ YES ✓    │
+            // └─────────┴─────────┴────────────────────┴──────────────┴─────────────────────┴──────────┘
+            
             if mul(y, gt(x, div(not(0), y))) {
-                mstore(0x40, 0xbac65e5b) // `MathMasters__MulWadFailed()`.
-                revert(0x1c, 0x04)
+                // Memory [0x40: 0x00000000000000000000000000000000000000000000000000000000bac65e5b]
+                mstore(0x60, 0xa56044f7) // `MathMasters__MulWadFailed()`.
+                // Get last 4 bytes starting from 28 (0x1c)
+                // 0x [0]00000000000000000000000000000000000000000000000000000000[28]bac65e5b[32]
+                // @audit - low: This is revertign with a blank message
+                // @audit - why are you ovrriding the free memory pointer?
+                // @audit - your are using the wrong function selector 0xbac65e5b instead of 0xa56044f7
+                revert(0x7c, 0x04)
             }
             z := div(mul(x, y), WAD)
         }

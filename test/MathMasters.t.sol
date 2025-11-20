@@ -11,6 +11,21 @@ contract MathMastersTest is Base_Test {
         assertEq(MathMasters.mulWad(369, 271), 0);
     }
 
+    // /////////////////////////////////////////
+    // // @audit - Added test for revert
+    // function testMulWadRevert() public {
+    //     // For internal library functions, we need to make an external call so expectRevert works
+    //     vm.expectRevert(MathMasters.MathMasters__MulWadFailed.selector);
+    //     this.helperMulWad(type(uint256).max, type(uint256).max);
+    // }
+
+    // // Helper function to make the call external so expectRevert works
+    // function helperMulWad(uint256 x, uint256 y) external pure returns (uint256) {
+    //     return MathMasters.mulWad(x, y);
+    // }
+    // // @audit - End of added test
+    // /////////////////////////////////////////
+
     function testMulWadFuzz(uint256 x, uint256 y) public pure {
         // Ignore cases where x * y overflows.
         unchecked {
